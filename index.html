@@ -434,12 +434,14 @@ function sx(x) {
 }
 function sy(y) {
   const { yMin, yMax, H, m } = MAP;
-  // exposition vers le haut => inverser
-  return H - m.bottom - (y - yMin) / (yMax - yMin) * (H - m.top - m.bottom);
+  // faible exposition en haut, forte exposition en bas
+  return m.top + (y - yMin) / (yMax - yMin) * (H - m.top - m.bottom);
 }
 
+// Taille des bulles proportionnelle à l'effectif (aire ~ effectif),
+// toujours active : la taille relative reste un repère visuel même
+// quand SHOW_COHORT_DATA masque les chiffres exacts.
 function bubbleR(type) {
-  if (!SHOW_COHORT_DATA) return 16;
   const eff = DATA[type].effectif;
   return 10 + Math.sqrt(eff) * 3.2;
 }
@@ -455,7 +457,7 @@ function buildMap() {
   svg.setAttribute("role", "img");
   svg.setAttribute("aria-label",
     "Carte des typologies. Axe horizontal : dynamisme, de négatif à gauche vers positif à droite. " +
-    "Axe vertical : exposition au risque, de faible en bas vers élevée en haut. " +
+    "Axe vertical : exposition au risque, de faible en haut vers élevée en bas. " +
     "Les quatre profils y sont positionnés, ainsi qu'un point représentant vos réponses.");
 
   function el(name, attrs, text) {
@@ -486,11 +488,15 @@ function buildMap() {
     fill: "var(--text-soft)", "font-size": 13 }, "Dynamisme +"));
   svg.appendChild(el("text", { x: left, y: bottom + 28, "text-anchor": "start",
     fill: "var(--text-soft)", "font-size": 13 }, "− Dynamisme"));
-  // axe Y (vertical)
-  const yl = el("text", { x: 16, y: (top + bottom) / 2, "text-anchor": "middle",
+  // axe Y (vertical) : faible en haut, forte en bas
+  const ymid = (top + bottom) / 2;
+  svg.appendChild(el("text", { x: 16, y: ymid, "text-anchor": "middle",
     fill: "var(--text-soft)", "font-size": 13,
-    transform: `rotate(-90 16 ${(top + bottom) / 2})` }, "Exposition au risque +");
-  svg.appendChild(yl);
+    transform: `rotate(-90 16 ${ymid})` }, "Exposition au risque"));
+  svg.appendChild(el("text", { x: left - 8, y: top + 4, "text-anchor": "end",
+    fill: "var(--text-soft)", "font-size": 11 }, "faible"));
+  svg.appendChild(el("text", { x: left - 8, y: bottom, "text-anchor": "end",
+    fill: "var(--text-soft)", "font-size": 11 }, "forte +"));
 
   // Bulles des profils
   const order = ["A", "B", "C", "D"];
